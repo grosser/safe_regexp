@@ -11,7 +11,10 @@ GEM
     jaro_winkler (1.5.2)
     maxitest (3.1.0)
       minitest (>= 5.0.0, < 5.12.0)
+    metaclass (0.0.4)
     minitest (5.11.3)
+    mocha (1.8.0)
+      metaclass (~> 0.0.1)
     parallel (1.16.1)
     parser (2.6.2.0)
       ast (~> 2.4.0)
@@ -36,6 +39,7 @@ PLATFORMS
 DEPENDENCIES
   bump
   maxitest
+  mocha
   rake
   rubocop
   safe_regexp!

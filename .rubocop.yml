@@ -34,3 +34,9 @@ Layout/MultilineMethodCallIndentation:
 
 Style/NumericPredicate:
   EnforcedStyle: comparison
+
+Security/MarshalLoad:
+  Enabled: false
+
+Layout/EmptyLineAfterGuardClause:
+  Enabled: false
