@@ -4,7 +4,7 @@ $LOAD_PATH << File.expand_path("lib", __dir__)
 require "#{name.tr("-", "/")}/version"
 
 Gem::Specification.new name, SafeRegexp::VERSION do |s|
-  s.summary = "Backtracking bomb safe regular expressions"
+  s.summary = "Backtracking bomb safety / timeouts for regular expressions"
   s.authors = ["Michael Grosser"]
   s.email = "michael@grosser.it"
   s.homepage = "https://github.com/grosser/#{name}"

@@ -1,4 +1,4 @@
-Backtracking bomb safe regular expressions
+Backtracking bomb safety / timeouts for regular expressions
 
 Install
 =======
