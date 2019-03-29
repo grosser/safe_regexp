@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 module SafeRegexp
+  RESCUED_EXCEPTION = StandardError
+
   class RegexpTimeout < Timeout::Error
   end
 
@@ -10,11 +12,11 @@ module SafeRegexp
       begin
         read, write, pid = executor
         Marshal.dump([regex, method, string, keepalive], write)
-      rescue Errno::EPIPE # keepalive killed the process
+      rescue Errno::EPIPE # keepalive already killed the process
         raise if retried
         retried = true
-        discard_executor
-        retry
+        discard_executor # avoiding kill overhead since it's already dead
+        retry # new executor will be created by `executor` call
       end
 
       unless IO.select([read], nil, nil, timeout)
@@ -22,7 +24,8 @@ module SafeRegexp
         raise RegexpTimeout
       end
 
-      Marshal.load(read)
+      result = Marshal.load(read)
+      result.is_a?(RESCUED_EXCEPTION) ? raise(result) : result
     end
 
     def shutdown
@@ -54,7 +57,7 @@ module SafeRegexp
 
     # - keepalive gets extended by whatever time the matching takes, but that should not be too bad
     #   we could fix it, but that means extra overhead that I'd rather avoid
-    # - using select to avoid having extra threads
+    # - using select to avoid having extra threads / Timeout
     def executor
       Thread.current[:safe_regexp_executor] ||= begin
         in_read, in_write = IO.pipe
@@ -66,8 +69,12 @@ module SafeRegexp
           loop do
             break unless IO.select([in_read], nil, nil, keepalive)
             regexp, method, string, keepalive = Marshal.load(in_read)
-            result = regexp.public_send(method, string)
-            result = result.to_a if result.is_a?(MatchData) # cannot be dumped
+            begin
+              result = regexp.public_send(method, string)
+              result = result.to_a if result.is_a?(MatchData) # cannot be dumped
+            rescue RESCUED_EXCEPTION
+              result = $!
+            end
             Marshal.dump(result, out_write)
           end
           exit! # to not run any kind of at_exit hook the parent might have configured

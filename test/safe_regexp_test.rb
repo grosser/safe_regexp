@@ -2,7 +2,7 @@
 require_relative "test_helper"
 require "benchmark"
 
-SingleCov.covered! uncovered: 10 # code in fork is not reporting coverage
+SingleCov.covered! uncovered: 12 # code in fork is not reporting coverage
 
 describe SafeRegexp do
   def simple_match(**options)
@@ -119,6 +119,13 @@ describe SafeRegexp do
       assert_raises Errno::EPIPE do
         simple_match keepalive: 0.1
       end
+    end
+
+    it "raises exceptions" do
+      assert_raises TypeError do
+        SafeRegexp.execute /\?\?\?/, :match, 2
+      end
+      simple_match # works after
     end
   end
 

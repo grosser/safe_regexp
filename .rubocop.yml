@@ -40,3 +40,6 @@ Security/MarshalLoad:
 
 Layout/EmptyLineAfterGuardClause:
   Enabled: false
+
+Style/SpecialGlobalVars:
+  Enabled: false
