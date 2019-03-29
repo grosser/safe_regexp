@@ -24,6 +24,7 @@ SafeRegexp.execute(regex, :match?, value) # -> SafeRegexp::RegexpTimeout
 Behind the scenes
 =================
 
+ - not using `Thread` or `Timeout`
  - spawns a co-processor and `kill -9` it if it takes too long, shuts down after 10s of not being used, use `keepalive: 0` to shutdown immediately
  - defaults to 1s timeout
  - uses 1 co-processor per thread

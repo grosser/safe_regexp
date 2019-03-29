@@ -1,10 +1,6 @@
 # frozen_string_literal: true
-require "timeout"
 
 module SafeRegexp
-  class SubprocessTimeout < Timeout::Error
-  end
-
   class RegexpTimeout < Timeout::Error
   end
 
@@ -21,12 +17,12 @@ module SafeRegexp
         retry
       end
 
-      begin
-        Timeout.timeout(timeout, SubprocessTimeout) { Marshal.load(read.gets) }
-      rescue SubprocessTimeout
+      unless IO.select([read], nil, nil, timeout)
         kill_executor pid
         raise RegexpTimeout
       end
+
+      Marshal.load(read.gets)
     end
 
     def shutdown
@@ -68,8 +64,7 @@ module SafeRegexp
           keepalive = 1
           loop do
             break unless IO.select([in_read], nil, nil, keepalive)
-            break unless (instructions = in_read.gets)
-            regexp, method, string, keepalive = Marshal.load(instructions)
+            regexp, method, string, keepalive = Marshal.load(in_read.gets)
             result = regexp.public_send(method, string)
             out_write.puts Marshal.dump(result)
           end
