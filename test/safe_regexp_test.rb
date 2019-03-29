@@ -2,7 +2,7 @@
 require_relative "test_helper"
 require "benchmark"
 
-SingleCov.covered! uncovered: 9 # code in fork is not reporting coverage
+SingleCov.covered! uncovered: 10 # code in fork is not reporting coverage
 
 describe SafeRegexp do
   def simple_match(**options)
