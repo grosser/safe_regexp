@@ -33,6 +33,7 @@ describe SafeRegexp do
   after do
     SafeRegexp.shutdown
     maxitest_wait_for_extra_threads
+    child_processes.must_equal []
   end
 
   it "has a VERSION" do
