@@ -135,4 +135,11 @@ describe SafeRegexp do
       2.times { SafeRegexp.shutdown }
     end
   end
+
+  describe ".kill_executor" do
+    it "does not blow up when aleady reaped" do
+      Process.expects(:kill)
+      SafeRegexp.send(:kill_executor, 123)
+    end
+  end
 end
