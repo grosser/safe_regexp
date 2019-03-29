@@ -67,6 +67,7 @@ module SafeRegexp
             break unless IO.select([in_read], nil, nil, keepalive)
             regexp, method, string, keepalive = Marshal.load(in_read)
             result = regexp.public_send(method, string)
+            result = result.to_a if result.is_a?(MatchData) # cannot be dumped
             Marshal.dump(result, out_write)
           end
           exit! # to not run any kind of at_exit hook the parent might have configured

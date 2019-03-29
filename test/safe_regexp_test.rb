@@ -49,6 +49,10 @@ describe SafeRegexp do
       SafeRegexp.execute(/\n\n/, :=~, "\n\n").must_equal 0
     end
 
+    it "can transfer MatchData" do
+      SafeRegexp.execute(/a/, :match, "a").must_equal ["a"]
+    end
+
     it "is fast" do
       simple_match # warm up
       Benchmark.realtime { simple_match }.must_be :<, 0.01
