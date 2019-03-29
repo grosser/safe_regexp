@@ -9,7 +9,7 @@ module SafeRegexp
       retried = false
       begin
         read, write, pid = executor
-        write.puts Marshal.dump([regex, method, string, keepalive])
+        Marshal.dump([regex, method, string, keepalive], write)
       rescue Errno::EPIPE # keepalive killed the process
         raise if retried
         retried = true
@@ -22,7 +22,7 @@ module SafeRegexp
         raise RegexpTimeout
       end
 
-      Marshal.load(read.gets)
+      Marshal.load(read)
     end
 
     def shutdown
@@ -65,9 +65,9 @@ module SafeRegexp
           keepalive = 1
           loop do
             break unless IO.select([in_read], nil, nil, keepalive)
-            regexp, method, string, keepalive = Marshal.load(in_read.gets)
+            regexp, method, string, keepalive = Marshal.load(in_read)
             result = regexp.public_send(method, string)
-            out_write.puts Marshal.dump(result)
+            Marshal.dump(result, out_write)
           end
           exit! # to not run any kind of at_exit hook the parent might have configured
         end

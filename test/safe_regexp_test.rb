@@ -6,14 +6,14 @@ SingleCov.covered! uncovered: 9 # code in fork is not reporting coverage
 
 describe SafeRegexp do
   def simple_match(**options)
-    SafeRegexp.execute(/foo/, :match?, "foo", **options).must_equal true
+    SafeRegexp.execute(/foo/, :=~, "foo", **options).must_equal 0
   end
 
   def force_timeout(timout = 1)
     regex = /aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?/
     value = "a" * 46
     assert_raises(SafeRegexp::RegexpTimeout) do
-      SafeRegexp.execute(regex, :match?, value, timeout: timout)
+      SafeRegexp.execute(regex, :=~, value, timeout: timout)
     end
   end
 
@@ -45,6 +45,10 @@ describe SafeRegexp do
       simple_match
     end
 
+    it "can match with newlines" do
+      SafeRegexp.execute(/\n\n/, :=~, "\n\n").must_equal 0
+    end
+
     it "is fast" do
       simple_match # warm up
       Benchmark.realtime { simple_match }.must_be :<, 0.01
@@ -53,10 +57,10 @@ describe SafeRegexp do
     it "is threadsafe" do
       t = Thread.new do
         sleep 0.1
-        SafeRegexp.execute(/a/, :match?, "a", keepalive: 0)
+        SafeRegexp.execute(/a/, :=~, "a", keepalive: 0)
       end
       force_timeout
-      t.value.must_equal true # it matched while other was busy
+      t.value.must_equal 0 # it matched while other was busy
     end
 
     it "does not leave threads behind" do
