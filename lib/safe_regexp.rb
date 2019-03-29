@@ -35,13 +35,14 @@ module SafeRegexp
     def kill_executor(pid)
       begin
         Process.kill :KILL, pid # kill -9
+      rescue Errno::ESRCH
+        nil # already dead
+      else
         begin
           Process.wait pid # reap child
         rescue Errno::ECHILD
           nil # already reaped
         end
-      rescue Errno::ESRCH
-        nil # already dead
       end
       discard_executor
     end
