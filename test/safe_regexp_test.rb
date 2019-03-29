@@ -19,6 +19,7 @@ describe SafeRegexp do
 
   def child_processes
     running_processes = `ps -f`.split("\n").map { |line| line.split(/\s+/) }
+    running_processes.delete_if { |line| line.last(2) == ["ps", "-f"] } # ignore self
     ppid_index = running_processes.first.index("PPID")
     running_processes.select { |p| p[ppid_index] == Process.pid.to_s }
   end
