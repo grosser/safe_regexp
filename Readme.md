@@ -1,6 +1,6 @@
-Backtracking bomb safety / timeouts for regular expressions
+Ruby Regex Timeout / Backtracking Bomb Safety
 
-Stay safe when executing untrusted regular expressions.
+Don't let untrusted regular expressions kill your servers (cannot be caught with a `Timeout`).
 
 Install
 =======
