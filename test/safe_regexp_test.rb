@@ -2,7 +2,7 @@
 require_relative "test_helper"
 require "benchmark"
 
-SingleCov.covered! uncovered: 12 # code in fork is not reporting coverage
+SingleCov.covered! uncovered: 14 # code in fork is not reporting coverage
 
 describe SafeRegexp do
   def simple_match(**options)
@@ -81,6 +81,16 @@ describe SafeRegexp do
     it "can timeout" do
       time = Benchmark.realtime { force_timeout }
       assert time.between?(0.9, 1.1), time
+    end
+
+    it "does not fail when child shuts down" do
+      Tempfile.create "safe-regexp-log" do |file|
+        Process.wait(fork do
+          $stderr.reopen(File.open(file, 'w'))
+          simple_match
+        end)
+        File.read(file).must_equal ""
+      end
     end
 
     it "can configure timeout" do

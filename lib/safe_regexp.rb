@@ -68,7 +68,11 @@ module SafeRegexp
           keepalive = 1 # initial payload should come in shortly after boot
           loop do
             break unless IO.select([in_read], nil, nil, keepalive)
-            regexp, method, string, keepalive = Marshal.load(in_read)
+            begin
+              regexp, method, string, keepalive = Marshal.load(in_read)
+            rescue EOFError # someone killed this fork
+              break
+            end
             begin
               result = regexp.public_send(method, string)
               result = result.to_a if result.is_a?(MatchData) # cannot be dumped
