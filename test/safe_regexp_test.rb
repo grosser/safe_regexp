@@ -83,7 +83,7 @@ describe SafeRegexp do
       assert time.between?(0.9, 1.1), time
     end
 
-    it "does not fail when child shuts down" do
+    it "does not fail when workers parent shuts down" do
       Tempfile.create "safe-regexp-log" do |file|
         Process.wait(fork do
           $stderr.reopen(File.open(file, 'w'))
@@ -109,33 +109,81 @@ describe SafeRegexp do
       child_processes.size.must_equal 1
     end
 
-    it "shuts down after keealive" do
-      child_processes.must_equal []
-      simple_match keepalive: 0.1
-      child_processes.size.must_equal 1
-      sleep 0.2
-      child_processes.must_equal []
-    end
-
-    it "can execute after keepalive death" do
-      simple_match keepalive: 0.1
-      sleep 0.2
-      child_processes.must_equal []
-      simple_match
-    end
-
-    it "does not loop forever when execution keeps failing" do
-      Marshal.expects(:dump).times(2).raises(Errno::EPIPE)
-      assert_raises Errno::EPIPE do
-        simple_match keepalive: 0.1
-      end
-    end
-
     it "raises exceptions" do
       assert_raises TypeError do
         SafeRegexp.execute /\?\?\?/, :match, 2
       end
       simple_match # works after
+    end
+
+    describe "keepalive" do
+      it "shuts down after keealive" do
+        child_processes.must_equal []
+        simple_match keepalive: 0.1
+        child_processes.size.must_equal 1
+        sleep 0.2
+        child_processes.must_equal []
+      end
+
+      it "can execute after keepalive death" do
+        simple_match keepalive: 0.1
+        sleep 0.2
+        child_processes.must_equal []
+        simple_match
+      end
+
+      it "does not loop forever when execution keeps failing" do
+        Marshal.expects(:dump).times(2).raises(Errno::EPIPE)
+        assert_raises Errno::EPIPE do
+          simple_match keepalive: 0.1
+        end
+      end
+    end
+
+    describe "unexpected worker shutdown" do
+      # expected input from simple_match inside of fork, cannot be an expect since it is in the fork
+      def expect_load_in_fork
+        Marshal.stubs(:load).with { Process.pid != parent }.returns([/foo/, :=~, "foo", 1])
+      end
+
+      def expect_load_to_fail
+        Marshal.expects(:load).with { Process.pid == parent }.raises(EOFError)
+      end
+
+      let!(:parent) { Process.pid }
+      let!(:first_executor) do
+        simple_match
+        Thread.current[:safe_regexp_executor].last
+      end
+      let(:expected_error) { EOFError }
+
+      # retried process kept running, so we need to kill it
+      after { Process.kill :KILL, first_executor }
+
+      it "retries" do
+        # expected return from reader, first it fails then it has the correct return value
+        Marshal.expects(:load).with { Process.pid == parent }.returns(0) # 2nd call
+        expect_load_to_fail # 1st call
+
+        expect_load_in_fork
+
+        simple_match
+      end
+
+      it "does not retry forever" do
+        expect_load_to_fail.times(2)
+        expect_load_in_fork
+        assert_raises(expected_error) { simple_match }
+      end
+
+      it "does not retry when another part raises a similar error" do
+        Marshal.expects(:dump).raises(expected_error)
+        Marshal.expects(:load).never
+        assert_raises(expected_error) { simple_match }
+      end
+
+      # not tested, but not important ... tried but ended up super messy/complicated :(
+      it "does not retry loading when we just spawned a new process via keepalive error"
     end
   end
 
