@@ -2,7 +2,7 @@
 require_relative "test_helper"
 require "benchmark"
 
-SingleCov.covered! uncovered: 14 # code in fork is not reporting coverage
+SingleCov.covered! uncovered: 14 + (RUBY_VERSION > "2.6.0" ? 0 : 1) # code in fork is not reporting coverage
 
 describe SafeRegexp do
   def simple_match(**options)
@@ -114,6 +114,11 @@ describe SafeRegexp do
         SafeRegexp.execute /\?\?\?/, :match, 2
       end
       simple_match # works after
+    end
+
+    it "shows nice title for forks" do
+      simple_match
+      child_processes.to_s.must_include "safe_regexp"
     end
 
     describe "keepalive" do

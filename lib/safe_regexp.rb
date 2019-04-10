@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require "timeout"
 
 module SafeRegexp
   RESCUED_EXCEPTION = StandardError
@@ -79,7 +80,10 @@ module SafeRegexp
         pid = fork do
           in_write.close
           out_read.close
+
+          Process.setproctitle("ruby safe_regexp worker")
           keepalive = 1 # initial payload should come in shortly after boot
+
           loop do
             break unless IO.select([in_read], nil, nil, keepalive)
             begin
