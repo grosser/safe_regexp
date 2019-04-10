@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    safe_regexp (0.2.1)
+    safe_regexp (0.2.2)
 
 GEM
   remote: https://rubygems.org/
