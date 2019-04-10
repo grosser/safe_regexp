@@ -9,22 +9,36 @@ module SafeRegexp
   class << self
     def execute(regex, method, string, timeout: 1, keepalive: 10)
       retried = false
+
       begin
-        read, write, pid = executor
-        Marshal.dump([regex, method, string, keepalive], write)
-      rescue Errno::EPIPE # keepalive already killed the process
-        raise if retried
+        loading_result = false
+
+        begin
+          read, write, pid = executor
+          Marshal.dump([regex, method, string, keepalive], write)
+        rescue Errno::EPIPE
+          # keepalive already killed the process, but we don't check before sending
+          # since that would be a race condition and cause overhead for the 99.9% case
+          raise if retried
+          retried = true
+          discard_executor # avoiding kill overhead since it's already dead
+          retry # new executor will be created by `executor` call
+        end
+
+        unless IO.select([read], nil, nil, timeout)
+          kill_executor pid
+          raise RegexpTimeout
+        end
+
+        loading_result = true
+        result = Marshal.load(read)
+      rescue EOFError # process was dead from keepalive when we sent to it or got killed from outside
+        raise if retried || !loading_result
         retried = true
         discard_executor # avoiding kill overhead since it's already dead
-        retry # new executor will be created by `executor` call
+        retry
       end
 
-      unless IO.select([read], nil, nil, timeout)
-        kill_executor pid
-        raise RegexpTimeout
-      end
-
-      result = Marshal.load(read)
       result.is_a?(RESCUED_EXCEPTION) ? raise(result) : result
     end
 
