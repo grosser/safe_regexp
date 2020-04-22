@@ -8,7 +8,7 @@ module SafeRegexp
   end
 
   class << self
-    def execute(regex, method, string, timeout: 1, keepalive: 10)
+    def execute(regex, method, *args, timeout: 1, keepalive: 10)
       retried = false
 
       begin
@@ -16,7 +16,7 @@ module SafeRegexp
 
         begin
           read, write, pid = executor
-          Marshal.dump([regex, method, string, keepalive], write)
+          Marshal.dump([regex, method, args, keepalive], write)
         rescue Errno::EPIPE
           # keepalive already killed the process, but we don't check before sending
           # since that would be a race condition and cause overhead for the 99.9% case
@@ -87,12 +87,12 @@ module SafeRegexp
           loop do
             break unless IO.select([in_read], nil, nil, keepalive)
             begin
-              regexp, method, string, keepalive = Marshal.load(in_read)
+              regexp, method, args, keepalive = Marshal.load(in_read)
             rescue EOFError # someone killed this fork
               break
             end
             begin
-              result = regexp.public_send(method, string)
+              result = regexp.public_send(method, *args)
               result = result.to_a if result.is_a?(MatchData) # cannot be dumped
             rescue RESCUED_EXCEPTION
               result = $!

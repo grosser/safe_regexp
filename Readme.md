@@ -23,6 +23,10 @@ regex = /aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa?aa
 value = "a" * 46
 regex.match? value # false in ~60s
 SafeRegexp.execute(regex, :match?, value) # -> SafeRegexp::RegexpTimeout
+
+# methods without arguments
+regex = "^(The '(?<first_group>.*)' parameter of the (?<second_group>.*))$"
+SafeRegexp.execute(regex, :names) # -> ["first_group", "second_group"]
 ```
 
 Behind the scenes
