@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    safe_regexp (0.3.0)
+    safe_regexp (0.4.0)
 
 GEM
   remote: https://rubygems.org/
@@ -46,4 +46,4 @@ DEPENDENCIES
   single_cov
 
 BUNDLED WITH
-   2.0.1
+   2.0.2
